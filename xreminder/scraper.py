@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 import click
 from twscrape import API, AccountsPool
@@ -73,11 +74,17 @@ async def fetch_article_links(
     links: list[ArticleLink] = []
     async for tweet in api.user_tweets(int(user_id), limit=limit):
         for text_link in tweet.links:
-            url = text_link.expanded_url or text_link.url
+            # twscrape's TextLink.url is already the expanded URL; tcourl is the t.co form
+            url = text_link.url or text_link.tcourl
             if not url:
                 continue
-            # skip t.co redirects and twitter/x self-links
-            if "t.co/" in url or "twitter.com" in url or "x.com" in url:
+            # skip t.co redirects and twitter/x self-links (host-based, not substring)
+            host = urlparse(url).netloc.lower()
+            if "@" in host:
+                host = host.rsplit("@", 1)[1]
+            if ":" in host:
+                host = host.split(":", 1)[0]
+            if any(host == d or host.endswith("." + d) for d in ("t.co", "twitter.com", "x.com")):
                 continue
             if not url.startswith("http"):
                 continue
