@@ -13,6 +13,10 @@ class Config:
     x_password: str = field(default_factory=lambda: os.getenv("X_PASSWORD", ""))
     x_email: str = field(default_factory=lambda: os.getenv("X_EMAIL", ""))
     x_email_password: str = field(default_factory=lambda: os.getenv("X_EMAIL_PASSWORD", ""))
+    # base32 TOTP secret for authenticator-app 2FA; spaces stripped for paste-safety
+    x_mfa_secret: str = field(
+        default_factory=lambda: os.getenv("X_MFA_SECRET", "").replace(" ", "")
+    )
     deepseek_api_key: str = field(default_factory=lambda: os.getenv("DEEPSEEK_API_KEY", ""))
     deepseek_base_url: str = field(
         default_factory=lambda: os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")

@@ -30,6 +30,7 @@ async def init_twscrape(config: Config) -> None:
         password=config.x_password,
         email=config.x_email,
         email_password=config.x_email_password,
+        mfa_code=config.x_mfa_secret or None,
     )
     click.echo(
         "Logging in to X… if prompted, paste the verification code "
