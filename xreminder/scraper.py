@@ -72,12 +72,18 @@ async def fetch_article_links(
     api: API, handle: str, user_id: str, limit: int
 ) -> list[ArticleLink]:
     links: list[ArticleLink] = []
+    seen: set[str] = set()
     async for tweet in api.user_tweets(int(user_id), limit=limit):
         for text_link in tweet.links:
             # twscrape's TextLink.url is already the expanded URL; tcourl is the t.co form
             url = text_link.url or text_link.tcourl
             if not url:
                 continue
+            # dedupe within the batch — X repeats a link in the card and the text,
+            # which would otherwise summarise (and bill) the same article twice
+            if url in seen:
+                continue
+            seen.add(url)
             # skip t.co redirects and twitter/x self-links (host-based, not substring)
             host = urlparse(url).netloc.lower()
             if "@" in host:
