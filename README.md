@@ -1,6 +1,6 @@
 # x-report-reminder
 
-Track X (Twitter) accounts, auto-summarise their article links with Claude, and save the summaries as Obsidian notes.
+Track X (Twitter) accounts, auto-summarise their article links with DeepSeek, and save the summaries as Obsidian notes.
 
 ## Setup
 
@@ -26,7 +26,8 @@ Required values:
 | `X_PASSWORD` | Your X account password |
 | `X_EMAIL` | Email address linked to your X account |
 | `X_EMAIL_PASSWORD` | Email password (for auto-fetching verification codes) |
-| `ANTHROPIC_API_KEY` | Claude API key from console.anthropic.com |
+| `DEEPSEEK_API_KEY` | DeepSeek API key from platform.deepseek.com |
+| `DEEPSEEK_MODEL` | DeepSeek model (default `deepseek-v4-flash`) |
 | `OBSIDIAN_VAULT_PATH` | Path to your Obsidian vault folder |
 
 > `.env` is gitignored — your credentials will never be committed.
@@ -66,7 +67,7 @@ xreminder remove-account stratechery
 
 1. **Fetch** — twscrape logs in to X with your credentials and reads recent tweets from tracked accounts
 2. **Extract** — External URLs from tweets are identified (t.co and twitter.com links are filtered out)
-3. **Summarise** — Each article is fetched via httpx, text is extracted with trafilatura, then Claude Haiku generates a structured summary
+3. **Summarise** — Each article is fetched via httpx, text is extracted with trafilatura, then DeepSeek generates a structured summary
 4. **Save** — Notes are written to your Obsidian vault as `.md` files with YAML frontmatter
 
 Processed articles are stored in SQLite (`~/.local/share/xreminder/`) — re-running `fetch` skips already-seen URLs.

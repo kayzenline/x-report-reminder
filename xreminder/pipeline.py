@@ -1,8 +1,8 @@
 import asyncio
 import sqlite3
 
-import anthropic
 import click
+from openai import AsyncOpenAI
 from twscrape import API, AccountsPool
 
 from .config import Config
@@ -12,14 +12,14 @@ from .notes import save_note
 from .scraper import ArticleLink, fetch_article_links, get_user_id
 from .summarizer import summarize
 
-_SEMAPHORE_LIMIT = 3  # max concurrent Claude calls
+_SEMAPHORE_LIMIT = 3  # max concurrent DeepSeek calls
 
 
 async def _process_link(
     link: ArticleLink,
     config: Config,
     conn: sqlite3.Connection,
-    client: anthropic.AsyncAnthropic,
+    client: AsyncOpenAI,
     sem: asyncio.Semaphore,
     dry_run: bool,
     stats: dict,
@@ -43,7 +43,7 @@ async def _process_link(
             return
 
         async with sem:
-            summary = await summarize(client, result.title, result.text)
+            summary = await summarize(client, config.deepseek_model, result.title, result.text)
 
         note_path = save_note(
             vault_path=str(config.resolved_vault_path),
@@ -74,7 +74,10 @@ async def run_pipeline(
 
     pool = AccountsPool(str(config.twscrape_db_path))
     api = API(pool)
-    client = anthropic.AsyncAnthropic(api_key=config.anthropic_api_key)
+    client = AsyncOpenAI(
+        api_key=config.deepseek_api_key,
+        base_url=config.deepseek_base_url,
+    )
 
     for handle in handles:
         click.echo(f"\nFetching @{handle}…")

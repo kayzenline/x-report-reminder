@@ -1,6 +1,8 @@
-import anthropic
+from openai import AsyncOpenAI
 
-# Minimum 1024 tokens for Haiku prompt cache — pad with detailed instructions.
+# DeepSeek does context caching automatically on shared prefixes — no special
+# directives needed. Keeping the system prompt identical across calls maximises
+# cache hits, which reduces both latency and cost server-side.
 SUMMARIZE_SYSTEM_PROMPT = """
 You are an expert research analyst who reads articles shared on X (Twitter) and produces
 concise, structured summaries for a professional knowledge base.
@@ -44,26 +46,25 @@ good quotes exist, omit this section entirely (do not write "None").
 
 
 async def summarize(
-    client: anthropic.AsyncAnthropic,
+    client: AsyncOpenAI,
+    model: str,
     title: str,
     text: str,
 ) -> str:
     article_content = f"**Title:** {title}\n\n{text}" if title else text
-    msg = await client.messages.create(
-        model="claude-haiku-4-5",
-        max_tokens=1024,
-        system=[
-            {
-                "type": "text",
-                "text": SUMMARIZE_SYSTEM_PROMPT,
-                "cache_control": {"type": "ephemeral"},
-            }
-        ],
+
+    # temperature=1.0 → DeepSeek's "data analysis" profile: faithful to the source
+    # with minimal embellishment, which is what we want for trustworthy summaries.
+    resp = await client.chat.completions.create(
+        model=model,
         messages=[
+            {"role": "system", "content": SUMMARIZE_SYSTEM_PROMPT},
             {
                 "role": "user",
                 "content": f"Please summarise the following article:\n\n{article_content}",
-            }
+            },
         ],
+        max_tokens=1024,
+        temperature=1.0,
     )
-    return msg.content[0].text
+    return resp.choices[0].message.content

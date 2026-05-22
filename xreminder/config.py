@@ -13,7 +13,13 @@ class Config:
     x_password: str = field(default_factory=lambda: os.getenv("X_PASSWORD", ""))
     x_email: str = field(default_factory=lambda: os.getenv("X_EMAIL", ""))
     x_email_password: str = field(default_factory=lambda: os.getenv("X_EMAIL_PASSWORD", ""))
-    anthropic_api_key: str = field(default_factory=lambda: os.getenv("ANTHROPIC_API_KEY", ""))
+    deepseek_api_key: str = field(default_factory=lambda: os.getenv("DEEPSEEK_API_KEY", ""))
+    deepseek_base_url: str = field(
+        default_factory=lambda: os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
+    )
+    deepseek_model: str = field(
+        default_factory=lambda: os.getenv("DEEPSEEK_MODEL", "deepseek-v4-flash")
+    )
     obsidian_vault_path: str = field(
         default_factory=lambda: os.getenv(
             "OBSIDIAN_VAULT_PATH",
@@ -52,6 +58,6 @@ class Config:
         return missing
 
     def validate_summarizer(self) -> list[str]:
-        if not self.anthropic_api_key:
-            return ["ANTHROPIC_API_KEY"]
+        if not self.deepseek_api_key:
+            return ["DEEPSEEK_API_KEY"]
         return []
