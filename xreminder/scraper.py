@@ -24,20 +24,42 @@ async def init_twscrape(config: Config) -> None:
         str(config.twscrape_db_path),
         login_config=LoginConfig(manual=True),
     )
-    api = API(pool)
-    await api.pool.add_account(
-        username=config.x_username,
-        password=config.x_password,
-        email=config.x_email,
-        email_password=config.x_email_password,
-        mfa_code=config.x_mfa_secret or None,
-    )
-    click.echo(
-        "Logging in to X… if prompted, paste the verification code "
-        "(check your email, SMS, or the X app) and press Enter."
-    )
-    await api.pool.login_all()
-    click.echo("Login complete.")
+    # Re-init is idempotent: drop any prior row so fresh cookies/secret take effect
+    # (add_account silently skips usernames that already exist).
+    await pool.delete_accounts(config.x_username)
+
+    if config.x_cookies:
+        # Cookie path: account becomes active on add (ct0 present) — no login flow,
+        # so X's Cloudflare-protected login endpoint is never touched.
+        await pool.add_account(
+            username=config.x_username,
+            password=config.x_password,
+            email=config.x_email,
+            email_password=config.x_email_password,
+            cookies=config.x_cookies,
+        )
+    else:
+        await pool.add_account(
+            username=config.x_username,
+            password=config.x_password,
+            email=config.x_email,
+            email_password=config.x_email_password,
+            mfa_code=config.x_mfa_secret or None,
+        )
+        click.echo(
+            "Logging in to X… if prompted, paste the verification code "
+            "(check your email, SMS, or the X app) and press Enter."
+        )
+        await pool.login_all()
+
+    # Report the real outcome instead of assuming success.
+    info = await pool.accounts_info()
+    acc = next((a for a in info if a["username"] == config.x_username), None)
+    if acc and acc["active"]:
+        click.echo(f"✓ Account {config.x_username} is active — session saved.")
+    else:
+        detail = (acc and acc["error_msg"]) or "no active session"
+        raise click.ClickException(f"Login failed for {config.x_username}: {detail}")
 
 
 async def get_user_id(api: API, handle: str) -> str | None:
