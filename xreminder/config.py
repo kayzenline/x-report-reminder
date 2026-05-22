@@ -17,8 +17,12 @@ class Config:
     x_mfa_secret: str = field(
         default_factory=lambda: os.getenv("X_MFA_SECRET", "").replace(" ", "")
     )
-    # browser session cookies ("auth_token=..; ct0=..") to bypass Cloudflare login
-    x_cookies: str = field(default_factory=lambda: os.getenv("X_COOKIES", "").strip())
+    # browser session cookies ("auth_token=..; ct0=..") to bypass Cloudflare login.
+    # Strip angle brackets: X's auth cookies are pure hex, so any "<" / ">" are
+    # leftover placeholder artifacts from a copy-paste, never real cookie data.
+    x_cookies: str = field(
+        default_factory=lambda: os.getenv("X_COOKIES", "").strip().replace("<", "").replace(">", "")
+    )
     deepseek_api_key: str = field(default_factory=lambda: os.getenv("DEEPSEEK_API_KEY", ""))
     deepseek_base_url: str = field(
         default_factory=lambda: os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")

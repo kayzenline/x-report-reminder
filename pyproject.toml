@@ -7,12 +7,24 @@ name = "x-report-reminder"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "twscrape>=0.12",
+    # Pinned to git: PyPI 0.17.0 can't parse X's current homepage to build the
+    # required x-client-transaction-id header (IndexError in xclid.py). The main
+    # branch rewrote that parser with regexes. Revisit when a newer PyPI release ships.
+    "twscrape @ git+https://github.com/vladkens/twscrape.git@206f0942fe41149da28530399f7c772ec00be17a",
     "openai>=1.0",
     "httpx>=0.27",
     "trafilatura>=1.9",
     "python-dotenv>=1.0",
     "click>=8.1",
+]
+
+[project.optional-dependencies]
+# `pyyaml` is test-only (used to parse generated frontmatter in assertions),
+# not a runtime dependency of xreminder itself.
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pyyaml>=6",
 ]
 
 [project.scripts]
@@ -21,3 +33,8 @@ xreminder = "xreminder.cli:cli"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["xreminder*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra"
