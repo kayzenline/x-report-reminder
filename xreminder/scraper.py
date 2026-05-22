@@ -3,6 +3,7 @@ from dataclasses import dataclass
 
 import click
 from twscrape import API, AccountsPool
+from twscrape.login import LoginConfig
 
 from .config import Config
 
@@ -15,21 +16,25 @@ class ArticleLink:
     tweet_date: str
 
 
-def _make_api(config: Config) -> API:
-    pool = AccountsPool(str(config.twscrape_db_path))
-    return API(pool)
-
-
 async def init_twscrape(config: Config) -> None:
     config.twscrape_db_path.parent.mkdir(parents=True, exist_ok=True)
-    api = _make_api(config)
+    # manual=True → twscrape prompts you to type the verification code X sends,
+    # rather than trying to read it from your inbox over IMAP.
+    pool = AccountsPool(
+        str(config.twscrape_db_path),
+        login_config=LoginConfig(manual=True),
+    )
+    api = API(pool)
     await api.pool.add_account(
         username=config.x_username,
         password=config.x_password,
         email=config.x_email,
         email_password=config.x_email_password,
     )
-    click.echo("Logging in to X… (may prompt for email verification code)")
+    click.echo(
+        "Logging in to X… if prompted, paste the verification code "
+        "(check your email, SMS, or the X app) and press Enter."
+    )
     await api.pool.login_all()
     click.echo("Login complete.")
 
